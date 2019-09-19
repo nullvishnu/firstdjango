@@ -1,0 +1,213 @@
+
+{% extends 'main.html' %}
+{% load static from staticfiles %}
+{% block title %} Date {% endblock %}
+{% block content %}
+
+<form method="post" enctype="multipart/form-data" action="upload_file">
+     {% csrf_token %}
+<input type="file" name="myfile" multiple>
+<button href="excel">Upload</button>
+</form>
+
+<div ng-app="dateapp">
+<div ng-controller="datectrl" layout="column" class="md-padding" id="popupContainer"  layout-padding ng-cloak >
+  <br/>
+    <md-card>
+        <md-card-title>
+      <md-card-title-text>
+        <span class="md-headline">Tab Name</span>
+      </md-card-title-text>
+    </md-card-title>
+
+
+    <md-card-content>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+              <div layout="row">
+                    <md-input-container class="md-icon-float md-block" >
+                        <label>Customer ID</label>
+                        <md-icon md-svg-src="img/icons/ic_person_24px.svg" class="name"></md-icon>
+                        <input ng-model="cus_id" type="text" ng-change="myfun()">
+                    </md-input-container>
+
+                  <md-input-container class="md-icon-float md-block" >
+                        <label>Location</label>
+                        <md-icon md-svg-src="img/icons/ic_person_24px.svg" class="name"></md-icon>
+                        <input ng-model="cus_location" type="text" ng-change="myfun()">
+                    </md-input-container>
+
+
+                  <md-input-container class="md-icon-float md-block" >
+                        <label>Invoice NO</label>
+                        <md-icon md-svg-src="img/icons/ic_person_24px.svg" class="name"></md-icon>
+                        <input ng-model="invoice_no" type="text" ng-change="myfun()">
+                    </md-input-container>
+
+
+                  <section layout="row" layout-sm="column" layout-align="right center" layout-wrap>
+                  <md-button class="md-raised md-primary" ng-click="generatexl()" >Filter</md-button>
+                      <md-button class="md-raised md-warn" href="excel" >Xcel</md-button>
+                   </section>
+
+
+
+
+
+              </div>
+        </form>
+    </md-card-content>
+         </md-card>
+
+     <md-card>
+<!--        <md-card-content>-->
+<!--                <div class="row table-responsive">-->
+<!--                    <div class="col-md-12 col-lg-12 col-sm-12">-->
+<!--                        <table class="table table-striped table-bordered table-condensed table-hover md-primary">-->
+<!--                    <thead class="header">-->
+<!--                    <th scope="col">Employee Name</th>-->
+<!--                    <th scope="col">Customer Loclation</th>-->
+<!--                    <th scope="col">Customer Status</th>-->
+<!--                    </thead>-->
+<!--                    {% for d in books.DATA %}-->
+<!--                    <tbody>-->
+<!--                    <tr>-->
+<!--                        <td class="text-center">{{d.employee_name}}</td>-->
+<!--                        <td class="text-center">{{d.location_name}}</td>-->
+<!--                        <td class="text-center">{{d.fetsoutstanding_status}}</td>-->
+<!--                    </tr>-->
+<!--                    {% endfor %}-->
+<!--                    </tbody>-->
+<!--                </table>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--     </md-card-content>-->
+         {% verbatim %}
+         <md-card-content>
+                <div class="row table-responsive">
+                    <div class="col-md-12 col-lg-12 col-sm-12">
+                        <table class="table table-striped table-bordered table-condensed table-hover md-primary" id="tb_emp">
+                    <thead class="header">
+
+                    <th scope="col" class="text-center">Customer Id</th>
+                    <th scope="col" class="text-center">Employee Name</th>
+                    <th scope="col" class="text-center">Location</th>
+                    <th scope="col" class="text-center">Invoice No</th>
+                    <th scope="col" class="text-center">Status</th>
+                    </thead>
+
+                    <tbody>
+                    <tr ng-repeat="emp in empsmry">
+
+                        <td class="text-center">{{emp.customer_gid}}</td>
+                        <td class="text-center">{{emp.employee_name}}</td>
+                        <td class="text-center">{{emp.location_name}}</td>
+                        <td class="text-center">{{emp.fetsoutstanding_invoiceno}}</td>
+                        <td class="text-center">{{emp.fetsoutstanding_status}}</td>
+                    </tr>
+
+                    </tbody>
+                </table>
+                    </div>
+                </div>
+
+
+     </md-card-content>
+         {% endverbatim %}
+  </md-card>
+
+  </div>
+</div>
+
+
+
+
+<script>
+var app= angular.module('dateapp', ['ngMaterial', 'ngMessages'])
+ .config(function($httpProvider) {
+        $httpProvider.defaults.xsrfCookieName = 'csrftoken';
+        $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
+    });
+  app.controller('datectrl',function($scope,newservice,$window,$filter) {
+  var Appname="";
+   $scope.empsmry=[];
+   $scope.exportData=[];
+
+loaddata();
+
+            function loaddata() {
+             debugger;
+                var get_empl = newservice.getcusomter()
+                get_empl.then(function(result) {
+
+                 $scope.main= result.data.DATA;
+                 $scope.empsmry = $scope.main;
+
+                 });
+
+             }
+         $scope.generatexl = function(){
+          // Headers:
+          $scope.sno=0;
+               $scope.exportData.push(["S.No","Customer Id","Employee Name","Location","Invoice No","Status"]);
+                angular.forEach($scope.empsmry, function(value, key) {
+                 $scope.sno=$scope.sno+1;
+                   $scope.exportData.push([$scope.sno,value.customer_gid, value.employee_name, value.location_name, value.fetsoutstanding_invoiceno, value.fetsoutstanding_status]);
+
+                        });
+
+               var url="excelfilter?Main="+JSON.stringify($scope.exportData);
+               window.open(url,"_blank");
+                }
+
+
+<!--             $scope.generatexl = function(){-->
+<!--                debugger;-->
+<!--                      var dropdown = newservice.genexcel($scope.empsmry);-->
+<!--                      dropdown.then(function(result) {-->
+<!--                      $scope.empexcel = result.data;-->
+
+<!--                      },-->
+<!--                     function() {-->
+<!--                        return empsmry;-->
+<!--                     });-->
+
+<!--             }-->
+
+        $scope.myfun = function() {
+                $scope.empsmry = $filter('filter')($scope.main, {
+                    "customer_gid": $scope.cus_id,
+                    "location_name": $scope.cus_location,
+                    "fetsoutstanding_invoiceno": $scope.invoice_no,
+                });
+
+        }
+
+  });
+app.service('newservice', function($http) {
+        this.getcusomter = function() {
+            var response = $http.get("emp", {
+            });
+            return response;
+     }
+<!--     this.genexcel = function(empsmry){-->
+<!--         var response = $http.post("excelfilter",{params:{"filter_data":empsmry}});-->
+<!--            return response;-->
+
+<!--        }-->
+
+});
+
+
+</script>
+
+ {% endblock %}
+<!--                for(var i=0; i<$scope.empsmry.length;i++)-->
+<!--                {-->
+<!--                $scope.cust.push($scope.empsmry[i].customer_gid);-->
+<!--                }-->
+
+<!--                        angular.forEach($scope.empsmry, function(value, key) {-->
+<!--                        alert(JSON.stringify(value.customer_gid))-->
+<!--                            $scope.exportData.push([value]);-->
+<!--                        });-->
